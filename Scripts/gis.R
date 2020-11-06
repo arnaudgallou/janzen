@@ -80,13 +80,14 @@
           bioclim <- "GIS/Clim/BioClim/bioclim-1979_2013.tif" %>% 
             rs_read_stk(c("bio1", "bio2", "bio4", "bio10", "bio11", "bio12"))
           
-          for (i in dem_folders) {
-            loc <- i %>% 
+          for (i in seq_along(dem_folders)) {
+            dem <- dem_folders[i]
+            loc <- dem %>% 
               basename() %>% 
               str_to_lower() %>% 
               str_replace_all(" ", "_")
             
-            i %>% 
+            dem %>% 
               list.files(pattern = "\\.tif$", full.names = TRUE) %>% 
               set_names(str_extract(dirname(.), "[^/]+$")) %>% 
               map(
@@ -105,14 +106,16 @@
                 .id = "location"
               ) %>% 
               rename(elev_band = zone) %>% 
-              group_by(elev_band) %>% 
-              mutate(across(
+              group_by(elev_band) %>%
+              summarise(across(
                 starts_with("bio"),
                 mean
               )) %>% 
-              ungroup() %>% 
-              distinct(elev_band, .keep_all = TRUE) %>% 
               write_csv(str_c("GIS/Clim/Extracted/", loc, "-bioclim.csv"))
+            
+            if (i %% 4 == 0) {
+              gc() # to free up RAM
+            }
           }
         }
       }
