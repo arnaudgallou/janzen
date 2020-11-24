@@ -243,21 +243,6 @@
             ),
             elev_range = elev_max - elev_min
           )
-        
-        janzen_std %>% 
-          group_by(location) %>% 
-          mutate(
-            elev_range = mean(elev_max - elev_min),
-            bio = mean(bio2)
-          ) %>% 
-          distinct(location, .keep_all = TRUE) %>% 
-          ungroup() %>% 
-          ggplot(aes(
-            x = bio,
-            y = elev_range
-          )) +
-          geom_point() +
-          geom_smooth(method = "lm")
       }
   }
 
