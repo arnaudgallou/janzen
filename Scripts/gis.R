@@ -13,24 +13,6 @@
       }
   }
 
-####  Spatial points  ####
-  {
-    geo_pts <- janzen %>% 
-      distinct(id_ref, .keep_all = TRUE) %>%
-      summarise(
-        id_ref,
-        location,
-        lon,
-        lat,
-        across("sp_per_site", as.numeric)
-      ) %>% 
-      drop_na() %>% 
-      st_as_sf(
-        coords = c("lon", "lat"),
-        crs = 4326
-      )
-  }
-
 ####  Bioclim  ####
   {
     # · Notes ----
@@ -76,8 +58,8 @@
     # · Extraction ----
       {
         if (extract_clim) {
-          dem_folders <- list.files("GIS/Elev/dem", full.names = TRUE)
-          bioclim <- "GIS/Clim/BioClim/bioclim-1979_2013.tif" %>% 
+          dem_folders <- list.files("GIS/elev/dem", full.names = TRUE)
+          bioclim <- "GIS/clim/bioclim/bioclim-1979_2013.tif" %>% 
             rs_read_stk(c("bio1", "bio2", "bio4", "bio10", "bio11", "bio12"))
           
           for (i in seq_along(dem_folders)) {
