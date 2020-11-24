@@ -9,8 +9,8 @@
     
     # · Data ----
       {
-        shiny_bioclim <- read_csv("data/shiny_bioclim.csv")
-        shiny_janzen <- read_csv("data/shiny_janzen.csv")
+        shiny_bioclim <- read_csv("shiny/data/shiny_bioclim.csv")
+        shiny_janzen <- read_csv("shiny/data/shiny_janzen.csv")
       }
     
     # · Function ----
