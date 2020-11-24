@@ -19,14 +19,15 @@
     proj <- 4326
     data(World)
     
-    janzen %>%
-      distinct(id_ref, .keep_all = TRUE) %>% 
+    janzen %>% 
+      distinct(id_ref, .keep_all = TRUE) %>%
       summarise(
+        id_ref,
+        location,
         lon,
         lat,
-        sp_per_site,
         across("sp_per_site", as.numeric)
-      )
+      ) %>% 
       drop_na() %>% 
       st_as_sf(
         coords = c("lon", "lat"),
