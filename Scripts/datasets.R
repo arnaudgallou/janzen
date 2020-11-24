@@ -3,7 +3,7 @@
     # · Parameters ----
       {
         dropbox_save <- FALSE
-        options(readr.num_columns = 0)
+        # options(readr.num_columns = 0)
       }
     
     # · Libraries ----
@@ -18,14 +18,14 @@
 
 ####  Data  ####
   {
-    # · Source ID ----
+    # · Source ref ----
       {
         data_source <- gsheet2tbl("docs.google.com/spreadsheets/d/1sF2quSOTyqljF9Hle64J9UPwOdbFg8Qj0FJJaS-s3Uk")
       }
     
     # · Normalized data ----
       {
-        normalized <- "Datasets/Normalized" %>% 
+        normalized <- "data/normalized" %>% 
           list.files(
             pattern = "normalized(?:_\\d)?\\.csv$",
             full.names = TRUE
@@ -46,8 +46,8 @@
     
     # · Datasets ----
       {
-        omit_ref <- c(10060, 10111, 10250, 10256, 20007, 20017, 30001)
-        dfs <- "Datasets" %>% 
+        omit_ref <- c(10027, 10060, 10111, 10250, 10256, 20007, 20017, 30001, 30002)
+        dfs <- "data/datasets" %>% 
           list.files(
             pattern = "\\.csv$",
             full.names = TRUE
@@ -114,7 +114,7 @@
               authority %>% if_else(!is.na(.), ., ""),
               sep = " "
             ) %>% 
-              str_clean() %>% 
+              clean_str() %>% 
               uc_first()
           ) %>% 
           ungroup() %>% 
@@ -185,7 +185,8 @@
             elev_mean = (min + max) / 2,
             elev_range = max - min,
             elev_band = floor_nearest(elev_mean, 100),
-            type = if_else(!is.na(type), type, "continent")
+            type = if_else(!is.na(type), type, "continent"),
+            zone = if_else(between(lat, -23.3, 23.3), "tropical", "temperate")
           ) %>% 
           group_by(id_ref) %>% 
           mutate(
@@ -197,7 +198,7 @@
           ) %>% 
           ungroup() %>% 
           rename(elev_min = min, elev_max = max) %>% 
-          select(id_ref:region, type, lat:lon, id_sp:elev_max, elev_mean:elev_band, sampling_min:sp_per_site, data_reliability, authority_code, singleton)
+          select(id_ref:region, type:zone, lat:lon, id_sp:elev_max, elev_mean:elev_band, sampling_min:sp_per_site, data_reliability, authority_code, singleton)
         
         if (dropbox_save) {
           mdf %>% write_delim("~/Dropbox/janzen/dataset_janzen.csv", delim = ";")
@@ -220,7 +221,43 @@
       {
         janzen <- mdf %>% 
           left_join(bioclim, by = c("location", "elev_band")) %>% 
-          filter(singleton < 30 & elev_range != 0)
+          filter(singleton < 30)
+      }
+    
+    # · Standardise sampling size ----
+      {
+        sampling_thr <- 3000
+        janzen_std <- mdf %>% 
+          left_join(bioclim, by = c("location", "elev_band")) %>% 
+          filter(sampling_size >= sampling_thr, singleton < 30) %>%
+          mutate(
+            sampling_min = sampling_max - sampling_thr,
+            sampling_size = sampling_thr
+          ) %>% 
+          filter(elev_max > sampling_min) %>%
+          mutate(
+            elev_min = if_else(
+              elev_min < sampling_min,
+              sampling_min,
+              elev_min
+            ),
+            elev_range = elev_max - elev_min
+          )
+        
+        janzen_std %>% 
+          group_by(location) %>% 
+          mutate(
+            elev_range = mean(elev_max - elev_min),
+            bio = mean(bio2)
+          ) %>% 
+          distinct(location, .keep_all = TRUE) %>% 
+          ungroup() %>% 
+          ggplot(aes(
+            x = bio,
+            y = elev_range
+          )) +
+          geom_point() +
+          geom_smooth(method = "lm")
       }
   }
 
@@ -231,8 +268,8 @@
         pre_jags <- janzen %>% 
           drop_na(starts_with("bio")) %>% 
           mutate(
-            across(matches("^(?:bio1?[24]|elev_range)"), log),
-            across(starts_with("bio"), standardize) # to center bioclim data
+            across(matches("^elev_range"), log),
+            across(starts_with("bio"), standardize)
           ) %>% 
           rename(
             mat = bio1,
