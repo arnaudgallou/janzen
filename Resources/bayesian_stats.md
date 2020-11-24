@@ -15,5 +15,10 @@
   * [bayesplot](https://cran.r-project.org/web/packages/bayesplot/vignettes/)
   * [bayestestR](https://easystats.github.io/bayestestR/index.html)
 
+- Model diagnostics:
+  * [model exploration](https://m-clark.github.io/bayesian-basics/diagnostics.html)
+  * [mcmc](https://mc-stan.org/bayesplot/reference/MCMC-diagnostics.html)
+  * [ppc](http://mc-stan.org/rstanarm/reference/pp_check.stanreg.html)
+
 - Other:
-  * [ppc graphs ideas](http://mc-stan.org/rstanarm/reference/pp_check.stanreg.html)
+  * [random slopes and intercepts](http://rstudio-pubs-static.s3.amazonaws.com/32494_bf0f5bad3eaf401ebce6b617d747b79e.html)
