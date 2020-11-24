@@ -3,6 +3,9 @@
 .RData
 .Ruserdata
 .DS_Store
-Notes.txt
-Datasets/
-GIS/
+notes.txt
+/data
+/figures
+/GIS
+/tmp
+/shiny/data
