@@ -1,4 +1,6 @@
 import regex
+import pandas
+import csv
 
 def sanitize(string, patterns = None):
     sub_ls = [(r' +', ' '), (r'[-—–]+', '-'), (r'\b\p{Lu}\.\K\s(?=\p{Lu})', ''), (r'\p{Ll}\K-\n(?=\p{Ll})', ''), (r'(?:\([\pL. ]+|\b(?:[&)]|ex))\K\n', ' '), (r'\p{Ll}\K(?=\p{Lu})', ' '), (r'\b(?:subsp|ssp|var)\.\s*[a-z-]+\K\n', ' '), (r'\bet\b', '&'), (r'\d\K\s(?=\d)', ''), (r'\d-\K\n(?=\d)', ''), (r'\d\K\n(?=m)', ' ')]

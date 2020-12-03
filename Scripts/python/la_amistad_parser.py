@@ -7,8 +7,6 @@ pdftotext -raw -f 32 -l 284 la_amistad.pdf la_amistad.txt
 
 from regex import *
 import helperFunctions as hf
-import pandas
-import csv
 
 sub_ls = [
     (r'\n\K[\W\p{Greek}]+(?:[A-Z]{3,})?\W+(?=[A-Z])|([A-Z][a-z]+)\K\s\1', ''),
