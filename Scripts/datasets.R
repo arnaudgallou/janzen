@@ -1,18 +1,19 @@
 ####  Init  ####
   {
-    # · Parameters ----
-      {
-        dropbox_save <- FALSE
-        # options(readr.num_columns = 0)
-      }
-    
     # · Libraries ----
       {
         library(gsheet)
         library(magrittr)
         library(tidyverse)
         library(toolkit)
+        library(lubridate)
         # library(tidylog)
+      }
+    
+    # · Settings ----
+      {
+        dropbox_save <- FALSE
+        # options(readr.num_columns = 0)
       }
   }
 
@@ -20,7 +21,9 @@
   {
     # · Source ref ----
       {
-        data_source <- gsheet2tbl("docs.google.com/spreadsheets/d/1sF2quSOTyqljF9Hle64J9UPwOdbFg8Qj0FJJaS-s3Uk")
+        data_source <- "docs.google.com/spreadsheets/d/1sF2quSOTyqljF9Hle64J9UPwOdbFg8Qj0FJJaS-s3Uk" %>%
+          gsheet2tbl() %>%
+          mutate(received_date = mdy(received_date))
       }
     
     # · Normalized data ----
@@ -73,7 +76,7 @@
                       "^(?:ma|hi).+|.+ax$" = "max"
                     )
                   ),
-                colnames(.) %>% str_which(cols_re)
+                str_which(colnames(.), cols_re)
               ) %>% 
               mutate(
                 id_sp = row_number(),
@@ -83,8 +86,8 @@
             .id = "dataset"
           ) %>% 
           mutate(id_ref = if_else(
-            dataset %>% str_detect("\\d"),
-            dataset %>% str_extract("\\d+"),
+            str_detect(dataset, "\\d"),
+            str_extract(dataset, "\\d+"),
             id_ref
           )) %>% 
           filter(!(id_ref %in% omit_ref)) %>% 
@@ -106,7 +109,7 @@
                 TRUE ~ .
               )} %>% 
               gsub2("^\\w+\\.(?!\\s)\\K", " "),
-            authority = authority %>% gsub2("(?:[).,](?=\\w)|\\w(?=\\())\\K", " "),
+            authority = authority %>% gsub2("(?:[).,](?=\\pL)|\\pL(?=\\())\\K", " "),
             original_name = str_c(
               genus %>% if_else(!is.na(.) & mean(. != first_word(original_name)) > .5, ., ""),
               original_name,
@@ -141,34 +144,37 @@
       
     # · Master dataset ----
       {
-        grouping_reg <- c("Hawaii", "Cape Verde", "Canary", "Socotra", "Azores", "Reunion", "Taiwan", "Nepal")
-        grouping_id <- c(10081, 30000, 20095, 20013, 20091, 20001, 30059, 20062, 20082)
-        
+        group <- list(
+          regions = c("Hawaii", "Cape Verde", "Canary", "Socotra", "Azores", "Reunion", "Taiwan", "Nepal"),
+          id = c(10081, 30000, 20095, 20013, 20091, 20001, 30059, 20062, 20082)
+        )
         mdf <- norm_df %>% 
-          filter(!(region %in% grouping_reg | id_ref %in% grouping_id)) %>% 
-          bind_rows(
-            norm_df %>% 
-              filter(region %in% grouping_reg | id_ref %in% grouping_id) %>% 
-              arrange(desc(id_ref)) %>% 
-              mutate(location = case_when(
-                region %in% grouping_reg ~ region,
-                id_ref %in% c(20095, 20013) ~ "Utah",
-                id_ref %in% c(20062, 20082) ~ "South-Eastern Pyrenees",
-                TRUE ~ location
-              )) %>% 
-              group_by(location) %>% 
-              mutate(
-                id_ref = first(id_ref),
-                lat = mean(lat),
-                lon = mean(lon)
-              ) %>% 
-              group_by(accepted_name, .add = TRUE) %>% 
-              mutate(
-                min = min(min),
-                max = max(max)
-              ) %>% 
-              distinct(accepted_name, .keep_all = TRUE) %>% 
-              ungroup()
+          filter(!(location %in% c("Maquipucuna", "Rocky Mountains") & min < 1000)) %>% 
+          mutate_subset(
+            region %in% group$regions | id_ref %in% group$id,
+            fun = function(x) {
+              x %>% 
+                arrange(desc(id_ref)) %>% 
+                mutate(location = case_when(
+                  region %in% group$regions ~ region,
+                  id_ref %in% c(20095, 20013) ~ "Utah",
+                  id_ref %in% c(20062, 20082) ~ "South-Eastern Pyrenees",
+                  TRUE ~ location
+                )) %>% 
+                group_by(location) %>% 
+                mutate(
+                  id_ref = first(id_ref),
+                  lat = mean(lat),
+                  lon = mean(lon)
+                ) %>% 
+                group_by(accepted_name, .add = TRUE) %>% 
+                mutate(
+                  min = min(min),
+                  max = max(max)
+                ) %>% 
+                distinct(accepted_name, .keep_all = TRUE) %>% 
+                ungroup()
+            }
           ) %>% 
           filter(min <= max & max < 6500 & min > -50) %>% 
           group_by(id_ref, accepted_name) %>% 
@@ -177,7 +183,7 @@
             max = max(max)
           ) %>% 
           distinct(accepted_name, .keep_all = TRUE) %>% 
-          ungroup() %>% 
+          ungroup() %>%
           mutate(
             id_sp = row_number(),
             min = floor_nearest(min),
@@ -192,13 +198,14 @@
           mutate(
             sampling_min = min(min),
             sampling_max = max(max),
-            sampling_size = sampling_max - sampling_min,
-            sp_per_site = n(),
+            sampling_mid = (sampling_max + sampling_min) / 2,
+            sampling_range = sampling_max - sampling_min,
+            n_sp = n(),
             singleton = proportion(elev_range == 0)
           ) %>% 
           ungroup() %>% 
           rename(elev_min = min, elev_max = max) %>% 
-          select(id_ref:region, type:zone, lat:lon, id_sp:elev_max, elev_mean:elev_band, sampling_min:sp_per_site, data_reliability, authority_code, singleton)
+          select(id_ref:region, type, zone, lat:lon, id_sp:elev_max, elev_mean:elev_band, sampling_min:n_sp, singleton, data_reliability, authority_code)
         
         if (dropbox_save) {
           mdf %>% write_delim("~/Dropbox/janzen/dataset_janzen.csv", delim = ";")
@@ -213,73 +220,11 @@
           mutate(
             across(matches("bio\\d[01]?$"), ~ .x / 10),
             across("bio4", ~ .x / 100)
-          ) %>% 
-          rename(elev_band = zone)
+          )
       }
     
     # · Janzen ----
       {
-        janzen <- mdf %>% 
-          left_join(bioclim, by = c("location", "elev_band")) %>% 
-          filter(singleton < 30)
-      }
-    
-    # · Standardise sampling size ----
-      {
-        sampling_thr <- 3000
-        janzen_std <- mdf %>% 
-          left_join(bioclim, by = c("location", "elev_band")) %>% 
-          filter(sampling_size >= sampling_thr, singleton < 30) %>%
-          mutate(
-            sampling_min = sampling_max - sampling_thr,
-            sampling_size = sampling_thr
-          ) %>% 
-          filter(elev_max > sampling_min) %>%
-          mutate(
-            elev_min = if_else(
-              elev_min < sampling_min,
-              sampling_min,
-              elev_min
-            ),
-            elev_range = elev_max - elev_min
-          )
-      }
-  }
-
-####  Jags data  ####
-  {
-    # · Pre-jags ----
-      {
-        pre_jags <- janzen %>% 
-          drop_na(starts_with("bio")) %>% 
-          mutate(
-            across(matches("^elev_range"), log),
-            across(starts_with("bio"), standardize)
-          ) %>% 
-          rename(
-            mat = bio1,
-            dtr = bio2,
-            ts = bio4,
-            mtwq = bio10,
-            mtcq = bio11,
-            map = bio12
-          )
-      }
-    
-    # · Varying sampling sizes ----
-      {
-        jags_data <- pre_jags %>% filter(sampling_size >= 2000)
-      }
-    
-    # · Same sampling sizes ----
-      {
-        sampling_lim <- 2500
-        jags_data_3s <- pre_jags %>% 
-          filter(sampling_size >= sampling_lim) %>%
-          mutate(
-            sampling_min = sampling_max - sampling_lim,
-            sampling_size = sampling_max - sampling_min,
-          ) %>% 
-          filter(elev_min >= sampling_min)
+        janzen <- left_join(mdf, bioclim, by = c("location", "elev_band"))
       }
   }
