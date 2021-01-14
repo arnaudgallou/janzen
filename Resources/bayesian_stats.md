@@ -7,6 +7,7 @@
   * [Bayesian hierarchical models in ecology](https://bookdown.org/steve_midway/BHME/)
   * [Data analysis in brms](https://bookdown.org/ajkurz/DBDA_recoded/)
   * [Visualizing bayesian inference](https://seeing-theory.brown.edu/bayesian-inference/index.html)
+  * [Probability and Bayesian Modeling](https://bayesball.github.io/BOOK/probability-a-measurement-of-uncertainty.html)
 
 - R packages:
   * [rstanarm (official documentation)](https://mc-stan.org/rstanarm/)
@@ -14,6 +15,7 @@
   * [tidybayes](http://mjskay.github.io/tidybayes/index.html)
   * [bayesplot](https://cran.r-project.org/web/packages/bayesplot/vignettes/)
   * [bayestestR](https://easystats.github.io/bayestestR/index.html)
+  * [rethinking](https://github.com/rmcelreath/rethinking)
 
 - Model diagnostics:
   * [model exploration](https://m-clark.github.io/bayesian-basics/diagnostics.html)
