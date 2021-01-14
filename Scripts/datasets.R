@@ -93,23 +93,20 @@
           filter(!(id_ref %in% omit_ref)) %>% 
           group_by(id_ref) %>% 
           mutate(
-            subspecies = subspecies %>% {
-              if_else(
-                !is.na(.) & mean(original_name %>% str_detect(coll(.))) == 1,
-                NA_character_,
-                .
-              )} %>% 
+            subspecies = if_else(
+              !is.na(subspecies) & mean(original_name %>% str_detect(coll(subspecies))) == 1,
+              NA_character_,
+              subspecies
+            ) %>% 
               str_remove("^(?:ssp|subsp)\\.\\s*"),
-            variety = variety %>% str_remove("^var\\.\\s*"),
-            infraspecies = infraspecies %>% {
-              case_when(
-                !is.na(.) & str_detect(., coll(original_name)) ~ NA_character_,
-                !is.na(subspecies) ~ str_c("subsp.", subspecies, sep = " "),
-                !is.na(variety) ~ str_c("var.", variety, sep = " "),
-                TRUE ~ .
-              )} %>% 
+            variety = str_remove(variety, "^var\\.\\s*"),
+            infraspecies = case_when(
+              !is.na(infraspecies) & str_detect(infraspecies, coll(original_name)) ~ NA_character_,
+              !is.na(subspecies) ~ str_c("subsp.", subspecies, sep = " "),
+              !is.na(variety) ~ str_c("var.", variety, sep = " "),
+              TRUE ~ infraspecies
+            ) %>% 
               gsub2("^\\w+\\.(?!\\s)\\K", " "),
-            authority = authority %>% gsub2("(?:[).,](?=\\pL)|\\pL(?=\\())\\K", " "),
             original_name = str_c(
               genus %>% if_else(!is.na(.) & mean(. != first_word(original_name)) > .5, ., ""),
               original_name,
@@ -198,7 +195,6 @@
           mutate(
             sampling_min = min(min),
             sampling_max = max(max),
-            sampling_mid = (sampling_max + sampling_min) / 2,
             sampling_range = sampling_max - sampling_min,
             n_sp = n(),
             singleton = proportion(elev_range == 0)
