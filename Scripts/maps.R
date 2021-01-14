@@ -1,32 +1,33 @@
 ####  Init  ####
   {
-    # · Parameters ----
-      {
-        save_map <- FALSE
-      }
-    
     # · Libraries ----
       {
         library(tmap)
         library(sf)
       }
+    
+    # · Settings ----
+      {
+        save_map <- FALSE
+        tmap_mode("plot")
+      }
   }
 
 ####  Sites  ####
   {
-    tmap_mode("plot")
     col_bubble <- "#0099ff"
     proj <- 4326
     data(World)
     
-    janzen %>% 
+    janzen_map <- janzen %>% 
+      filter(sampling_range >= 3000, singleton < 30) %>%
       distinct(id_ref, .keep_all = TRUE) %>%
       summarise(
         id_ref,
         location,
         lon,
         lat,
-        across("sp_per_site", as.numeric)
+        across("n_sp", as.numeric)
       ) %>% 
       drop_na() %>% 
       st_as_sf(
@@ -42,7 +43,7 @@
           ) +
           tm_shape(.) +
           tm_bubbles(
-            size = "sp_per_site",
+            size = "n_sp",
             size.lim = c(0, 18000),
             scale = 2,
             col = col_bubble,
@@ -53,6 +54,6 @@
       }
     
     if (save_map) {
-      tmap_save(mapOverview, "Figures/map_sites.svg", outer.margins = 0, asp = 0)
+      tmap_save(janzen_map, "figures/janzen_map_2000m_30perc_singleton.svg", outer.margins = 0, asp = 0)
     }
   }
