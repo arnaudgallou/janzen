@@ -1,22 +1,24 @@
 ####  Init  ####
   {
+    # · Libraries ----
+      {
+        library(tmap)
+        library(sf)
+      }
+    
     # · Parameters ----
       {
         extract_clim <- FALSE
         reclass_biome <- FALSE
       }
     
-    # · Libraries ----
-      {
-        library(tmap)
-        library(sf)
-      }
-  }
-
-####  Bioclim  ####
-  {
     # · Notes ----
       {
+        # - DEM
+        # SRTM 1 Arc-Second Global
+        # https://earthexplorer.usgs.gov
+        # 
+        # - Clim data
         # Layer order:
         # 1. bio_1  -> annual mean temp. (°C/10)
         # 2. bio_2  -> mean diurnal range [air temp.] (°C/10)
@@ -25,80 +27,58 @@
         # 5. bio_11 -> mean temp. of coldest quarter (°C/10)
         # 6. bio_12 -> annual prec. (kg.m-2)
         # 
-        # More info at http://chelsa-climate.org
+        # More info at https://chelsa-climate.org
         # 
         # Data repository:
-        # https://envidatrepo.wsl.ch/uploads/chelsa/chelsa_V1/bioclim/float/
+        # https://envicloud.wsl.ch/#/?prefix=chelsa%2Fchelsa_V1
       }
-    
-    # · Dem mosaic ----
-      {
-        # res: 1 arc-second
-        # dem_ls <- list.files("GIS/Elev/dem", full.names = TRUE)
-        # 
-        # for (i in dem_ls) {
-        #   file_name <- i %>% 
-        #     basename() %>% 
-        #     str_to_lower() %>% 
-        #     str_replace_all(" ", "_")
-        #   
-        #   i %>% 
-        #     list.files(
-        #       pattern = "\\.tif$",
-        #       full.names = TRUE
-        #     ) %>% 
-        #     gdal_utils(
-        #       util = "buildvrt",
-        #       source = .,
-        #       destination = str_c("GIS/Elev/vrt/test/", file_name, ".vrt")
-        #     )
-        # }
-      }
-    
-    # · Extraction ----
-      {
-        if (extract_clim) {
-          dem_folders <- list.files("GIS/elev/dem", full.names = TRUE)
-          bioclim <- "GIS/clim/bioclim/bioclim-1979_2013.tif" %>% 
-            rs_read_stk(c("bio1", "bio2", "bio4", "bio10", "bio11", "bio12"))
-          
-          for (i in seq_along(dem_folders)) {
-            dem <- dem_folders[i]
-            loc <- dem %>% 
-              basename() %>% 
-              str_to_lower() %>% 
-              str_replace_all(" ", "_")
-            
-            dem %>% 
-              list.files(pattern = "\\.tif$", full.names = TRUE) %>% 
-              set_names(str_extract(dirname(.), "[^/]+$")) %>% 
-              map(
-                ~ .x %>% 
-                  rs_read() %>% 
-                  rs_set_range() %>% 
-                  rs_filter(. > 0) %>% 
-                  rs_reclass_dem(by = 100)
-              ) %>% 
-              map_df(
-                ~ bioclim %>% 
-                  rs_crop(.x, snap = "out") %>% 
-                  rs_reproject(to = .x) %>% 
-                  rs_zonal(.x, fun = "mean") %>% 
-                  as_tibble(),
-                .id = "location"
-              ) %>% 
-              rename(elev_band = zone) %>% 
-              group_by(elev_band) %>%
-              summarise(across(
-                starts_with("bio"),
-                mean
-              )) %>% 
-              write_csv(str_c("GIS/Clim/Extracted/", loc, "-bioclim.csv"))
-            
-            if (i %% 4 == 0) {
-              gc() # to free up RAM
-            }
-          }
+  }
+
+####  Bioclim extraction  ####
+  {
+    if (extract_clim) {
+      dem_folders <- list.files("~/../../Volumes/Backups/phd/GIS/elev/dem", full.names = TRUE)
+      bioclim <- "~/../../Volumes/Backups/phd/GIS/bioclim/bioclim-1979_2013.tif" %>% 
+        rs_read_stk(c("bio1", "bio2", "bio4", "bio10", "bio11", "bio12"))
+      
+      for (i in seq_along(dem_folders)) {
+        dem <- dem_folders[i]
+        loc <- dem %>% 
+          basename() %>% 
+          str_to_lower() %>% 
+          str_replace_all(" ", "_")
+        
+        dem %>% 
+          list.files(pattern = "\\.tif$", full.names = TRUE) %>% 
+          set_names(str_extract(dirname(.), "[^/]+$")) %>% 
+          map(
+            ~ .x %>% 
+              rs_read() %>% 
+              rs_set_range() %>% 
+              rs_filter(. > 0) %>% 
+              rs_reclass_dem(by = 100)
+          ) %>% 
+          map_df(
+            ~ bioclim %>% 
+              rs_crop(.x, snap = "out") %>% 
+              rs_reproject(to = .x) %>% 
+              rs_zonal(.x, fun = "mean") %>% 
+              as_tibble(),
+            .id = "location"
+          ) %>% 
+          rename(elev_band = zone) %>% 
+          group_by(elev_band) %>%
+          mutate(across(
+            starts_with("bio"),
+            mean
+          )) %>% 
+          ungroup() %>% 
+          distinct(elev_band, .keep_all = TRUE) %>% 
+          write_csv(str_c("GIS/Clim/Extracted/", loc, "-bioclim.csv"))
+        
+        if (i %% 2 == 0) {
+          gc() # to free up RAM
         }
       }
+    }
   }
