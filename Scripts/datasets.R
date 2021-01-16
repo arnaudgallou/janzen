@@ -41,10 +41,7 @@
             accepted_name = species,
             name_status = status
           ) %>% 
-          mutate(
-            across(starts_with("id_"), as.character),
-            across(name_status, str_to_lower)
-          )
+          mutate(name_status = str_to_lower(name_status))
       }
     
     # · Datasets ----
@@ -62,20 +59,18 @@
               read_auto(guess_max = 2000) %>% 
               rename_with(str_to_lower) %>% 
               rename_with(
-                ~ .x %>% 
-                  str_replace_all(
-                    pattern = c(
-                      "^ge.+" = "genus",
-                      "^su.+" = "subspecies",
-                      "^va.+" = "variety",
-                      "^in.+" = "infraspecies",
-                      "^(?:au|no).+" = "authority",
-                      "^(?:sp|ta).+" = "original_name",
-                      "^(?:id|re).+" = "id_ref",
-                      "^(?:mi|lo).+|.+in$" = "min",
-                      "^(?:ma|hi).+|.+ax$" = "max"
-                    )
-                  ),
+                str_replace_all,
+                pattern = c(
+                  "^ge.+" = "genus",
+                  "^su.+" = "subspecies",
+                  "^va.+" = "variety",
+                  "^in.+" = "infraspecies",
+                  "^(?:au|no).+" = "authority",
+                  "^(?:sp|ta).+" = "original_name",
+                  "^(?:id|re).+" = "id_ref",
+                  "^(?:mi|lo).+|.+in$" = "min",
+                  "^(?:ma|hi).+|.+ax$" = "max"
+                ),
                 str_which(colnames(.), cols_re)
               ) %>% 
               mutate(
@@ -85,11 +80,14 @@
             },
             .id = "dataset"
           ) %>% 
-          mutate(id_ref = if_else(
-            str_detect(dataset, "\\d"),
-            str_extract(dataset, "\\d+"),
-            id_ref
-          )) %>% 
+          mutate(
+            id_ref = if_else(
+              str_detect(dataset, "\\d"),
+              str_extract(dataset, "\\d+"),
+              id_ref
+            ),
+            across(starts_with("id_"), as.numeric)
+          ) %>% 
           filter(!(id_ref %in% omit_ref)) %>% 
           group_by(id_ref) %>% 
           mutate(
@@ -119,10 +117,7 @@
           ) %>% 
           ungroup() %>% 
           select(dataset, id_ref, id_sp, original_name, min, max) %>% 
-          left_join(
-            data_source %>% mutate(across(id_ref, as.character)),
-            by = "id_ref"
-          ) %>% 
+          left_join(data_source, by = "id_ref") %>% 
           select(dataset, id_ref, location, region, continent, type, authority_code, id_sp:max, lat:lon, data_reliability)
       }
     
@@ -147,9 +142,9 @@
         )
         mdf <- norm_df %>% 
           filter(!(location %in% c("Maquipucuna", "Rocky Mountains") & min < 1000)) %>% 
-          mutate_subset(
+          transform_subset(
             region %in% group$regions | id_ref %in% group$id,
-            fun = function(x) {
+            .fun = function(x) {
               x %>% 
                 arrange(desc(id_ref)) %>% 
                 mutate(location = case_when(
@@ -204,7 +199,7 @@
           select(id_ref:region, type, zone, lat:lon, id_sp:elev_max, elev_mean:elev_band, sampling_min:n_sp, singleton, data_reliability, authority_code)
         
         if (dropbox_save) {
-          mdf %>% write_delim("~/Dropbox/janzen/dataset_janzen.csv", delim = ";")
+          write_delim(mdf, "~/Dropbox/janzen/dataset_janzen.csv", delim = ";")
         }
       }
     
