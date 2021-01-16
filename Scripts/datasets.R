@@ -48,10 +48,7 @@
       {
         omit_ref <- c(10027, 10060, 10111, 10250, 10256, 20007, 20017, 30001, 30002)
         dfs <- "data/datasets" %>% 
-          list.files(
-            pattern = "\\.csv$",
-            full.names = TRUE
-          ) %>% 
+          list.files(pattern = "\\.csv$", full.names = TRUE) %>% 
           set_names(basename(.) %>% str_extract("[^.]+")) %>% 
           map_df(~ {
             cols_re <- "^(?:id_(?!sp)|ref|(?:tax[aon]+|genus|genera|species|nomenclator|.*(?:min|max|low|high)(?:.?(?:alt|elev).*)?)$|auth|subsp|var|infra\\s*sp)"
@@ -124,10 +121,7 @@
     # · Normalized dataset ----
       {
         norm_df <- dfs %>% 
-          left_join(
-            normalized,
-            by = c("dataset", "id_sp")
-          ) %>% 
+          left_join(normalized, by = c("dataset", "id_sp")) %>% 
           filter(!is.na(accepted_name) & kingdom == "Plantae") %>% 
           arrange(id_ref) %>% 
           rename(gbif_sp_key = key) %>% 
@@ -136,48 +130,33 @@
       
     # · Master dataset ----
       {
-        group <- list(
-          regions = c("Hawaii", "Cape Verde", "Canary", "Socotra", "Azores", "Reunion", "Taiwan", "Nepal"),
-          id = c(10081, 30000, 20095, 20013, 20091, 20001, 30059, 20062, 20082)
-        )
+        regions <- c("Hawaii", "Cape Verde", "Canary", "Socotra", "Azores", "Reunion", "Taiwan", "Nepal")
+        
         mdf <- norm_df %>% 
           filter(!(location %in% c("Maquipucuna", "Rocky Mountains") & min < 1000)) %>% 
-          transform_subset(
-            region %in% group$regions | id_ref %in% group$id,
-            .fun = function(x) {
-              x %>% 
-                arrange(desc(id_ref)) %>% 
-                mutate(location = case_when(
-                  region %in% group$regions ~ region,
-                  id_ref %in% c(20095, 20013) ~ "Utah",
-                  id_ref %in% c(20062, 20082) ~ "South-Eastern Pyrenees",
-                  TRUE ~ location
-                )) %>% 
-                group_by(location) %>% 
-                mutate(
-                  id_ref = first(id_ref),
-                  lat = mean(lat),
-                  lon = mean(lon)
-                ) %>% 
-                group_by(accepted_name, .add = TRUE) %>% 
-                mutate(
-                  min = min(min),
-                  max = max(max)
-                ) %>% 
-                distinct(accepted_name, .keep_all = TRUE) %>% 
-                ungroup()
-            }
+          filter(min <= max & max <= 6500 & min > -50) %>% 
+          drop_na(matches("^(min|max)")) %>% 
+          mutate(location = case_when(
+            region %in% regions ~ region,
+            id_ref %in% c(20095, 20013) ~ "Utah",
+            id_ref %in% c(20062, 20082) ~ "South-Eastern Pyrenees",
+            TRUE ~ location
+          )) %>% 
+          arrange(desc(id_ref)) %>% 
+          group_by(location) %>% 
+          mutate(
+            id_ref = first(id_ref),
+            lat = mean(lat),
+            lon = mean(lon)
           ) %>% 
-          filter(min <= max & max < 6500 & min > -50) %>% 
-          group_by(id_ref, accepted_name) %>% 
+          group_by(accepted_name, .add = TRUE) %>% 
           mutate(
             min = min(min),
             max = max(max)
           ) %>% 
           distinct(accepted_name, .keep_all = TRUE) %>% 
-          ungroup() %>%
+          ungroup() %>% 
           mutate(
-            id_sp = row_number(),
             min = floor_nearest(min),
             max = floor_nearest(max),
             elev_mean = (min + max) / 2,
@@ -186,8 +165,10 @@
             type = if_else(!is.na(type), type, "continent"),
             zone = if_else(between(lat, -23.3, 23.3), "tropical", "temperate")
           ) %>% 
+          arrange(location) %>% 
           group_by(id_ref) %>% 
           mutate(
+            id_sp = row_number(),
             sampling_min = min(min),
             sampling_max = max(max),
             sampling_range = sampling_max - sampling_min,
