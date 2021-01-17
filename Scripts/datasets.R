@@ -26,7 +26,7 @@
           mutate(received_date = mdy(received_date))
       }
     
-    # · Normalized data ----
+    # · Normalized taxa ----
       {
         normalized <- "data/normalized" %>% 
           list.files(
@@ -123,7 +123,6 @@
         norm_df <- dfs %>% 
           left_join(normalized, by = c("dataset", "id_sp")) %>% 
           filter(!is.na(accepted_name) & kingdom == "Plantae") %>% 
-          arrange(id_ref) %>% 
           rename(gbif_sp_key = key) %>% 
           select(id_ref:id_sp, gbif_sp_key, kingdom, class, family, original_name, normalized_name, name_status, accepted_name, min:data_reliability)
       }
@@ -135,7 +134,7 @@
         mdf <- norm_df %>% 
           filter(!(location %in% c("Maquipucuna", "Rocky Mountains") & min < 1000)) %>% 
           filter(min <= max & max <= 6500 & min > -50) %>% 
-          drop_na(matches("^(min|max)")) %>% 
+          drop_na(matches("^(?:min|max)")) %>% 
           mutate(location = case_when(
             region %in% regions ~ region,
             id_ref %in% c(20095, 20013) ~ "Utah",
@@ -165,10 +164,8 @@
             type = if_else(!is.na(type), type, "continent"),
             zone = if_else(between(lat, -23.3, 23.3), "tropical", "temperate")
           ) %>% 
-          arrange(location) %>% 
           group_by(id_ref) %>% 
           mutate(
-            id_sp = row_number(),
             sampling_min = min(min),
             sampling_max = max(max),
             sampling_range = sampling_max - sampling_min,
@@ -177,7 +174,8 @@
           ) %>% 
           ungroup() %>% 
           rename(elev_min = min, elev_max = max) %>% 
-          select(id_ref:region, type, zone, lat:lon, id_sp:elev_max, elev_mean:elev_band, sampling_min:n_sp, singleton, data_reliability, authority_code)
+          arrange(location) %>% 
+          select(id_ref:region, type, zone, lat:lon, gbif_sp_key:elev_max, elev_mean:elev_band, sampling_min:n_sp, singleton, data_reliability, authority_code)
         
         if (dropbox_save) {
           write_delim(mdf, "~/Dropbox/janzen/dataset_janzen.csv", delim = ";")
