@@ -1,0 +1,1 @@
+Model examining the relationship between temperature seasonality and elevational range sizes within each location.
