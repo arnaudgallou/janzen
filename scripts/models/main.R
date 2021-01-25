@@ -4,14 +4,35 @@
       {
         library(R2jags)
         library(drake)
+        library(janzenUtilities)
       }
     
     # · Compile model ----
       {
-        comp <- compile_mdl(
-          "scripts/models/mdl3/mdl3.R",
-          "scripts/models/data/composed_std_data.R"
-        )
+        comp <- get_mdl("mdl1")
+        source(comp$file)
+      }
+    
+    # · Data ----
+      {
+        if (comp$name == "mdl3") {
+          mdl_data <- make_mdl_data(
+            .data = janzen,
+            min_gradient_size = 3000,
+            singleton_thr = 30,
+            buffer_size = 500,
+            std_gradients = TRUE,
+            average = TRUE,
+            cols = c("location", "elev_range", "singleton", "ts", "dtr")
+          )
+        } else {
+          mdl_data <- make_mdl_data(
+            .data = janzen,
+            min_gradient_size = 3000,
+            singleton_thr = 30,
+            cols = c("location", "elev_range", "sampling_range", "ts", "dtr")
+          )
+        }
       }
   }
 
@@ -19,10 +40,10 @@
   {
     plan_rs_fit <- drake_plan(
       rs_fit = jags(
-        data = comp$mdl_data,
+        data = mdl_data,
         inits = NULL,
-        parameters.to.save = comp$mdl_param,
-        model.file = comp$mdl,
+        parameters.to.save = mdl_param,
+        model.file = mdl,
         n.iter = 10000,
         n.thin = 5,
         n.chains = 3,
