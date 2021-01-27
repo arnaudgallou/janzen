@@ -1,0 +1,19 @@
+.well {
+  overflow: auto;
+  height: 100vh;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 0;
+}
+
+.container-fluid {
+  padding-left: 0;
+}
+
+.col-sm-8 {
+  padding-top: 90px;
+}
+
+#sigma_plot {
+  max-width: 700px;
+}
