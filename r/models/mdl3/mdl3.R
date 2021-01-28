@@ -10,11 +10,11 @@
       # priors ------------
       alpha_rs ~ dnorm(0, 1E-6)
       beta_rs ~ dnorm(0, 1E-6)
-      beta_rs2 ~ dnorm(0, 1E-6)
       tau_rs ~ dgamma(.001, .001)
       tau_site ~ dgamma(.001, .001)
 
-      # to simulate the most likely positions of the mean elevational range size in each location
+      # likelihood ------------
+      # to estimate the mean range size in each location
       for (i in 1:n_obs) {
         elev_range_obs[i] ~ dnorm(mu_site[i], tau_site)
         mu_site[i] <- alpha_site[location_obs[i]]
@@ -23,10 +23,9 @@
         elev_range_rep[i] ~ dnorm(mu_site[i], tau_site)
       }
 
-      # likelihood ------------
       for (i in 1:n) {
         alpha_site[i] ~ dnorm(mu_rs[i], tau_rs)
-        mu_rs[i] <- alpha_rs + beta_rs * dtr[i] + beta_rs2 * singleton[i]
+        mu_rs[i] <- alpha_rs + beta_rs * dtr[i]
 
         # simulated data for posterior predictive check
         alpha_site_rep[i] ~ dnorm(mu_rs[i], tau_rs)
@@ -42,7 +41,6 @@
     mdl_param <- c(
       "alpha_rs",
       "beta_rs",
-      "beta_rs2",
       "tau_rs",
       "alpha_site",
       "alpha_site_rep",
