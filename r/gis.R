@@ -29,7 +29,7 @@
     
     # · Functions ----
       {
-        source("scripts/gis_funs.R")
+        source("r/gis_funs.R")
       }
   }
 
