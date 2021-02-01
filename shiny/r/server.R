@@ -26,7 +26,8 @@ server <- function(input, output) {
             sampling_min,
             elev_min
           ),
-          elev_range = elev_max - elev_min
+          elev_range = elev_max - elev_min,
+          elev_range = if_else(elev_range == 0, 10, elev_range)
         )
     } else {
       data <- filter(data, sampling_min <= input$sampling_min)
@@ -67,6 +68,10 @@ server <- function(input, output) {
       ungroup() %>% 
       distinct(location, .keep_all = TRUE)
     
+    if ("log" %in% input$options) {
+      data <- mutate(data, elev_range = log(elev_range))
+    }
+    
     if (all(c("display_locations", "display_sampling_range") %in% input$options)) {
       data <- mutate(data, label = paste0(location, " (", sampling_range, " m)"))
     } else if (all(c("display_locations", "display_nb_sp") %in% input$options)) {
@@ -83,9 +88,6 @@ server <- function(input, output) {
       data <- filter(data, type == "island")
     } else if (input$type == "continents") {
       data <- filter(data, type == "continent")
-    }
-    if ("log" %in% input$options) {
-      data <- mutate(data, elev_range = log(elev_range))
     }
     
     data
@@ -105,7 +107,17 @@ server <- function(input, output) {
     plot <- janzen_data() %>% 
       ggplot(aes(
         x = .data[[input$bioclim]],
-        y = elev_range
+        y = elev_range,
+        shape = if (input$type == "all_type_shapes") {
+          type
+        } else {
+          NULL
+        },
+        color = if (any(c("display_locations", "display_sampling_range", "display_nb_sp") %in% input$options)) {
+          zone
+        } else {
+          NULL
+        }
       )) +
       geom_point(size = 2) +
       theme_classic() +
@@ -116,12 +128,11 @@ server <- function(input, output) {
       theme(
         axis.text = element_text(size = 14),
         axis.title = element_text(size = 17)
-      )
+      ) +
+      scale_color_manual(values = c("blue", "red"))
     
     if (any(c("display_locations", "display_sampling_range", "display_nb_sp") %in% input$options)) {
-      plot <- plot + 
-        geom_text_repel(aes(label = label, color = zone), size = 4.5, force = 5) +
-        scale_color_manual(values = c("blue", "red"))
+      plot <- plot + geom_text_repel(aes(label = label), size = 4.5, force = 5, show.legend = FALSE)
     }
     if ("log" %in% input$options) {
       plot <- plot + ylab("log(elevational range size)")
@@ -130,6 +141,10 @@ server <- function(input, output) {
       plot <- plot + geom_smooth(method = "lm")
     }
     
-    plot + theme(legend.position = "none")
+    plot + theme(
+      legend.position = "bottom",
+      legend.title = element_blank(),
+      legend.text = element_text(size = 14)
+    )
   })
 }
