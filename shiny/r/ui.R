@@ -29,7 +29,7 @@
 ####  Viewer  ####
   {
     ui <- fluidPage(
-      includeCSS("../style_janzen.css"),
+      includeCSS("shiny/style_janzen.css"),
       sidebarLayout(
         sidebarPanel(
           width = 4,
@@ -102,6 +102,7 @@
             label = "Land type:",
             choices = list(
               "all" = "all_type",
+              "all (with shapes)" = "all_type_shapes",
               "islands" = "islands",
               "continents" = "continents"
             ),
@@ -123,12 +124,13 @@
             selected = default["options"]
           ),
           helpText(
-            "Help:", tags$br(),
-            tags$strong("Singleton threshold"), ' - filter locations by percentage of singletons (single observations). A value of 30 (the default) will only select locations that have less than 30 percent of singletons.', tags$br(), tags$br(),
-            tags$strong("Maximum lowest elevation"), ' - filter locations by maximum lowest elevations. A value of 500 (the default) will only select locations whose the lowest elevational value is between 0 and 500 m.', tags$br(), tags$br(),
-            tags$strong("Sigma"), ' - a point on the elevational gradients used as a reference point for the buffer. "Filtering mode" must be set on "sigma" to enable this parameter.', tags$br(), tags$br(),
-            tags$strong("Buffer"), ' - produces a buffer area that filter any species with at least one theoritical observation (any elevation between the mininium and maximum observations of a species) falling in the buffer. The buffer is generated around "Sigma", meaning that a buffer of 500 m produces a total buffer area of 1000 m (500 m above and 500 m below "Sigma"). If "Filtering mode" is set to "mid-point", will produce a buffer around the mid-point of each elevational gradient.', tags$br(), tags$br(),
-            tags$strong("Filtering mode"), ' - "sigma": uses the elevation as defined by "Sigma" to select species and produce the buffer.', tags$br(), '"mid-point": uses the mid-point of each elevational gradient to select species and produce the buffer.', tags$br(), '"none": uses all data.'
+            tags$strong("Help:"), tags$br(),
+            tags$u("Singleton threshold"), ' - filter locations by percentage of singletons (single observations). A value of 30 (the default) will only select locations that have less than 30 percent of singletons.', tags$br(), tags$br(),
+            tags$u("Minimum sampling range"), ' - filter location by sampling ranges. A sampling range of 3000 (the defaul) will select all locations whose the sampled gradient is equal to or greater than 3000 m. If "Standardise sampling range" is enabled, will standardise all selected locations by the choosen sampling range value.', tags$br(), tags$br(),
+            tags$u("Maximum lowest elevation"), ' - filter locations by maximum lowest elevations. A value of 500 (the default) will only select locations whose the lowest elevational value is between 0 and 500 m.', tags$br(), tags$br(),
+            tags$u("Sigma"), ' - a point on the elevational gradients used as a reference point for the buffer. "Filtering mode" must be set on "sigma" to enable this feature', tags$br(), tags$br(),
+            tags$u("Buffer"), ' - produces a buffer area that filter any species with at least one theoritical observation (any elevation between the mininium and maximum observations of a species) falling in the buffer. The buffer is generated around "Sigma", meaning that a buffer of 500 m produces a total buffer area of 1000 m (500 m above and 500 m below "Sigma"). If "Filtering mode" is set to "mid-point", will produce a buffer around the mid-point of each elevational gradient.', tags$br(), tags$br(),
+            tags$u("Filtering mode"), ' - "sigma": uses the elevation as defined by "Sigma" to select species and produce the buffer.', tags$br(), '"mid-point": uses the mid-point of each elevational gradient to select species and produce the buffer.', tags$br(), '"none": uses all data.'
           )
         ),
         mainPanel(
