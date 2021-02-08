@@ -46,7 +46,7 @@
     
     # · Datasets ----
       {
-        omit_ref <- c(10027, 10060, 10111, 10250, 10256, 20007, 20017, 30001, 30002)
+        omit_ref <- c(10027, 10060, 10111, 10250, 10256, 20002, 20007, 20015, 20017, 20013, 20095, 30001, 30002, 30059, 20013, 20028, 20039, 20057, 20059, 20066, 20095, 20094, 20079)
         dfs <- "data/datasets" %>% 
           list.files(pattern = "\\.csv$", full.names = TRUE) %>% 
           set_names(basename(.) %>% str_extract("[^.]+")) %>% 
@@ -105,8 +105,8 @@
             original_name = str_c(
               genus %>% if_else(!is.na(.) & mean(. != first_word(original_name)) > .5, ., ""),
               original_name,
-              infraspecies %>% if_else(!is.na(.), ., ""),
-              authority %>% if_else(!is.na(.), ., ""),
+              infraspecies %>% if_else(is.na(.), "", .),
+              authority %>% if_else(is.na(.), "", .),
               sep = " "
             ) %>% 
               clean_str() %>% 
@@ -127,7 +127,7 @@
           select(id_ref:id_sp, gbif_sp_key, kingdom, class, family, original_name, normalized_name, name_status, accepted_name, min:data_reliability)
       }
       
-    # · Master dataset ----
+    # · Main dataset ----
       {
         regions <- c("Hawaii", "Cape Verde", "Canary", "Socotra", "Azores", "Reunion", "Taiwan", "Nepal")
         
@@ -137,9 +137,9 @@
           drop_na(matches("^(?:min|max)")) %>% 
           mutate(location = case_when(
             region %in% regions ~ region,
-            id_ref %in% c(20095, 20013) ~ "Utah",
+            # id_ref %in% c(20095, 20013) ~ "Utah",
             id_ref %in% c(20062, 20082) ~ "South-Eastern Pyrenees",
-            # id_ref %in% c(20001, 20051, 30046, 30059) ~ "Kenya",
+            id_ref %in% c(20001, 20051, 30046) ~ "Kenya", # 30059 aberdare
             TRUE ~ location
           )) %>% 
           arrange(desc(id_ref)) %>% 
@@ -162,7 +162,7 @@
             elev_mean = (min + max) / 2,
             elev_range = max - min,
             elev_band = floor_nearest(elev_mean, 100),
-            type = if_else(!is.na(type), type, "continent"),
+            type = if_else(is.na(type), "continent", type),
             zone = if_else(between(lat, -23.3, 23.3), "tropical", "temperate")
           ) %>% 
           group_by(id_ref) %>% 
@@ -185,7 +185,7 @@
     
     # · Bioclim ----
       {
-        bioclim <- "GIS/Clim/Extracted" %>% 
+        bioclim <- "gis/clim/extracted/present" %>% 
           list.files(pattern = "\\.csv$", full.names = TRUE) %>% 
           map_df(read_auto) %>% 
           mutate(
