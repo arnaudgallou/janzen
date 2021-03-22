@@ -2,36 +2,37 @@
   {
     # · Libraries ----
       {
-        library(R2jags)
         library(drake)
+        library(R2jags)
         library(janzenUtilities)
       }
     
     # · Compile model ----
       {
         comp <- get_mdl("mdl1")
-        source(comp$file)
       }
   }
 
 ####  Data  ####
   {
-    if (comp$name == "mdl3") {
+    if (comp$name == "mdl1") {
       mdl_data <- make_mdl_data(
         .data = janzen,
-        min_gradient_size = 3000,
-        singleton_thr = 30,
-        buffer_size = 500,
+        min_gradient_size = 2500,
+        singleton_thr = 25,
+        excluding_zone = 200,
         std_gradients = TRUE,
         average = TRUE,
-        cols = c("location", "elev_range", "singleton", "ts", "dtr")
+        cols = c("location", "elev_range", "land_type", "dtr", "ts", "past_delta_mat", "mat", "map"),
+        matrix_formula = ~ dtr
       )
     } else {
       mdl_data <- make_mdl_data(
         .data = janzen,
-        min_gradient_size = 2000,
-        singleton_thr = 30,
-        cols = c("location", "elev_range", "sampling_range", "ts", "dtr")
+        min_gradient_size = 2500,
+        singleton_thr = 25,
+        excluding_zone = 200,
+        cols = c("location", "elev_range", "dtr", "sampling_range", "ts")
       )
     }
   }
@@ -44,10 +45,10 @@
         inits = NULL,
         parameters.to.save = mdl_param,
         model.file = mdl,
-        n.iter = 10000,
+        n.iter = 40000,
         n.thin = 5,
         n.chains = 3,
-        n.burnin = 5000
+        n.burnin = 20000
       )
     )
 
