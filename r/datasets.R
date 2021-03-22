@@ -46,7 +46,9 @@
     
     # · Datasets ----
       {
-        omit_ref <- c(10027, 10060, 10111, 10250, 10256, 20002, 20007, 20015, 20017, 20013, 20095, 30001, 30002, 30059, 20013, 20028, 20039, 20057, 20059, 20066, 20095, 20094, 20079)
+        # unsuitable data (too large or unknown locations, no min/max elevations, doubtful data, etc.)
+        omit_ref <- c(10027, 10060, 10111, 10250, 10256, 20002, 20007, 20015, 20017, 20013, 20095, 30001, 30002, 30059, 30063, 20013, 20028, 20039, 20057, 20059, 20066, 20095, 20079)
+        
         dfs <- "data/datasets" %>% 
           list.files(pattern = "\\.csv$", full.names = TRUE) %>% 
           set_names(basename(.) %>% str_extract("[^.]+")) %>% 
@@ -115,7 +117,7 @@
           ungroup() %>% 
           select(dataset, id_ref, id_sp, original_name, min, max) %>% 
           left_join(data_source, by = "id_ref") %>% 
-          select(dataset, id_ref, location, region, continent, type, authority_code, id_sp:max, lat:lon, data_reliability)
+          select(dataset, id_ref, location, region, continent, land_type, authority_code, id_sp:max, lat:lon, data_reliability, method)
       }
     
     # · Normalized dataset ----
@@ -124,7 +126,7 @@
           left_join(normalized, by = c("dataset", "id_sp")) %>% 
           filter(!is.na(accepted_name) & kingdom == "Plantae") %>% 
           rename(gbif_sp_key = key) %>% 
-          select(id_ref:id_sp, gbif_sp_key, kingdom, class, family, original_name, normalized_name, name_status, accepted_name, min:data_reliability)
+          select(id_ref:id_sp, gbif_sp_key, kingdom, class, family, original_name, normalized_name, name_status, accepted_name, min:data_reliability, method)
       }
       
     # · Main dataset ----
@@ -132,7 +134,7 @@
         regions <- c("Hawaii", "Cape Verde", "Canary", "Socotra", "Azores", "Reunion", "Taiwan", "Nepal")
         
         mdf <- norm_df %>% 
-          filter(!(location %in% c("Maquipucuna", "Rocky Mountains") & min < 1000)) %>% 
+          # filter(!(id_ref %in% c(30063, 20066) & min < 1000)) %>% 
           filter(min <= max & max <= 6500 & min > -50) %>% 
           drop_na(matches("^(?:min|max)")) %>% 
           mutate(location = case_when(
@@ -157,12 +159,12 @@
           distinct(accepted_name, .keep_all = TRUE) %>% 
           ungroup() %>% 
           mutate(
-            min = floor_nearest(min),
+            min = if_else(location == "Canary", 0, floor_nearest(min)),
             max = floor_nearest(max),
             elev_mean = (min + max) / 2,
             elev_range = max - min,
             elev_band = floor_nearest(elev_mean, 100),
-            type = if_else(is.na(type), "continent", type),
+            land_type = if_else(is.na(land_type), "continent", land_type),
             zone = if_else(between(lat, -23.3, 23.3), "tropical", "temperate")
           ) %>% 
           group_by(id_ref) %>% 
@@ -176,7 +178,7 @@
           ungroup() %>% 
           rename(elev_min = min, elev_max = max) %>% 
           arrange(location) %>% 
-          select(id_ref:region, type, zone, lat:lon, gbif_sp_key:elev_max, elev_mean:elev_band, sampling_min:n_sp, singleton, data_reliability, authority_code)
+          select(id_ref:region, land_type, zone, lat:lon, gbif_sp_key:elev_max, elev_mean:elev_band, sampling_min:n_sp, singleton, data_reliability, authority_code, method)
         
         if (dropbox_save) {
           write_delim(mdf, "~/Dropbox/janzen/dataset_janzen.csv", delim = ";")
@@ -194,8 +196,15 @@
           )
       }
     
+    # · Paleoclim ----
+      {
+        paleoclim <- read_auto("gis/clim/extracted/palaeo/palaeo_clim_variability.csv")
+      }
+    
     # · Janzen ----
       {
-        janzen <- left_join(mdf, bioclim, by = c("location", "elev_band"))
+        janzen <- mdf %>% 
+          left_join(bioclim, by = c("location", "elev_band")) %>% 
+          left_join(paleoclim, by = "location")
       }
   }
