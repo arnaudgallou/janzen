@@ -3,7 +3,6 @@ title: "RR figures"
 output:
   html_document:
     keep_md: true
-    df_print: tibble
     dev: svg
 ---
 
