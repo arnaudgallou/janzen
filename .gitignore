@@ -4,8 +4,9 @@
 .Ruserdata
 .DS_Store
 notes.txt
+/figures/other/
+/figures/finished/
 /data
-/figures
 /GIS
 /tmp
 /shiny/data
