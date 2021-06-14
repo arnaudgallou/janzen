@@ -1,11 +1,3 @@
----
-title: "RR figures"
-output:
-  html_document:
-    keep_md: true
-    dev: svg
----
-
 # Main figures
 
 ![](../figures/rr_map.svg)  
