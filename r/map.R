@@ -27,8 +27,8 @@
         lat,
         n_sp,
         transect_length = case_when(
-          sampling_range >= 2500 ~ "2500",
-          sampling_range < 2500 ~ "2000",
+          sampling_range < 2500 ~ "0",
+          sampling_range >= 2500 ~ "1",
           TRUE ~ NA_character_
         )
       ) %>% 
