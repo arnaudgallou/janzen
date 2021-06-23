@@ -8,8 +8,6 @@
     # · Settings ----
       {
         save_map <- FALSE
-        sampling_range_thr <- 1500
-        singleton_thr <- 25
         colors <- c("#CC3E61", "#3D61CC") #c("#FF4D79", "#4d79ff")
       }
   }
@@ -18,8 +16,8 @@
   {
     janzen %>% 
       filter(
-        sampling_range >= sampling_range_thr,
-        singleton < singleton_thr
+        sampling_range >= 1500,
+        singleton < 25
       ) %>% 
       distinct(id_ref, .keep_all = TRUE) %>% 
       summarise(
