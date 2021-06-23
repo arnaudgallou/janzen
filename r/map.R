@@ -2,63 +2,62 @@
   {
     # · Libraries ----
       {
-        library(tmap)
-        library(sf)
+        library(rnaturalearth)
       }
     
     # · Settings ----
       {
         save_map <- FALSE
-        sampling_range_thr <- 3000
-        singleton_thr <- 30
-        col_bubble <- "#0099ff"
-        proj <- 4326
-        tmap_mode("plot")
+        sampling_range_thr <- 1500
+        singleton_thr <- 25
+        colors <- c("#CC3E61", "#3D61CC") #c("#FF4D79", "#4d79ff")
       }
   }
 
 ####  Map  ####
   {
-    data(World)
-    
-    janzen_map <- janzen %>% 
+    janzen %>% 
       filter(
         sampling_range >= sampling_range_thr,
         singleton < singleton_thr
-      ) %>%
-      distinct(id_ref, .keep_all = TRUE) %>%
+      ) %>% 
+      distinct(id_ref, .keep_all = TRUE) %>% 
       summarise(
-        id_ref,
-        location,
         lon,
         lat,
-        n_sp = as.numeric(n_sp)
+        n_sp,
+        transect_length = case_when(
+          sampling_range >= 2500 ~ "2500",
+          sampling_range < 2500 ~ "2000",
+          TRUE ~ NA_character_
+        )
       ) %>% 
       drop_na() %>% 
-      st_as_sf(
-        coords = c("lon", "lat"),
-        crs = proj
-      ) %>% {
-        tm_shape(World, projection = proj) +
-          tm_format("World", inner.margins = 0) +
-          tm_fill(alpha = .3) +
-          tm_borders(
-            lwd = .3,
-            alpha = .3
-          ) +
-          tm_shape(.) +
-          tm_bubbles(
-            size = "n_sp",
-            size.lim = c(0, 18000),
-            scale = 2,
-            col = col_bubble,
-            alpha = .3,
-            border.col = col_bubble
-          ) +
-          tm_legend(show = FALSE)
-      }
+      ggplot() +
+      geom_sf(
+        data = ne_countries(returnclass = "sf"),
+        size = 0.02,
+        alpha = .3
+      ) +
+      coord_sf(expand = FALSE) +
+      geom_point(
+        aes(
+          x = lon,
+          y = lat,
+          size = n_sp,
+          color = transect_length,
+          fill = transect_length
+        ),
+        stroke = .3,
+        shape = 21
+      ) +
+      scale_size_continuous(range = c(.5, 7)) +
+      scale_color_manual(values = colors) +
+      scale_fill_manual(values = alpha(colors, .3)) +
+      theme_void() +
+      theme(legend.position = "none")
     
     if (save_map) {
-      tmap_save(janzen_map, "figures/janzen_map.svg", outer.margins = 0, asp = 0)
+      save_map("map_transects.svg", width = 9)
     }
   }
