@@ -1,6 +1,6 @@
 # Main figures
 
-![](../figures/rr_map.svg)  
+![](../figures/map_transects.svg)  
 Figure 1. Spatial distribution of the 37 mountain locations used in the study. The size of the dots is proportional to the number of species in each location. In red, elevational gradients between 2000 m and 2500 m; in blue, elevational gradients ≥ 2500 m.
 
 <br>
