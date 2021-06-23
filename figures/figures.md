@@ -1,7 +1,9 @@
 # Main figures
 
+**Note:** I edited the map to include transects < 2000 m. I haven't uploaded the other figures using this transects.
+
 ![](../figures/map_transects.svg)  
-Figure 1. Spatial distribution of the 37 mountain locations used in the study. The size of the dots is proportional to the number of species in each location. In red, elevational gradients between 2000 m and 2500 m; in blue, elevational gradients ≥ 2500 m.
+Figure 1. Spatial distribution of the 46 mountain locations used in the study. The size of the dots is proportional to the number of species in each location. In red, elevational gradients between 1500 m and 2500 m; in blue, elevational gradients ≥ 2500 m.
 
 <br>
 
