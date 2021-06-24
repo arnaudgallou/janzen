@@ -5,14 +5,13 @@
         library(gsheet)
         library(magrittr)
         library(tidyverse)
-        library(toolkit)
         library(lubridate)
+        library(toolkit)
         # library(tidylog)
       }
     
     # · Settings ----
       {
-        dropbox_save <- FALSE
         # options(readr.num_columns = 0)
       }
   }
@@ -29,11 +28,7 @@
     # · Normalized taxa ----
       {
         normalized <- "data/normalized" %>% 
-          list.files(
-            pattern = "normalized(?:_\\d)?\\.csv$",
-            full.names = TRUE
-          ) %>% 
-          set_names(basename(.) %>% str_extract("[^-]+")) %>% 
+          list_files(r"{normalized(?:_\d)?\.csv$}", names = "[^-]+") %>% 
           map_df(read_auto, .id = "dataset") %>% 
           rename(
             id_sp = occurrenceId,
@@ -47,11 +42,10 @@
     # · Datasets ----
       {
         # unsuitable data (too large or unknown locations, no min/max elevations, doubtful data, etc.)
-        omit_ref <- c(10027, 10060, 10111, 10250, 10256, 20002, 20007, 20015, 20017, 20013, 20095, 30001, 30002, 30059, 30063, 20013, 20028, 20039, 20057, 20059, 20066, 20095, 20079)
+        omit_ref <- c(10027, 10060, 10111, 10250, 10256, 20002, 20007, 20013, 20015, 20017, 20028, 20039, 20057, 20059, 20066, 20079, 20095, 30001, 30002, 30059, 30005, 30063)
         
         dfs <- "data/datasets" %>% 
-          list.files(pattern = "\\.csv$", full.names = TRUE) %>% 
-          set_names(basename(.) %>% str_extract("[^.]+")) %>% 
+          list_files("\\.csv$", names = extract_file_name) %>% 
           map_df(~ {
             cols_re <- "^(?:id_(?!sp)|ref|(?:tax[aon]+|genus|genera|species|nomenclator|.*(?:min|max|low|high)(?:.?(?:alt|elev).*)?)$|auth|subsp|var|infra\\s*sp)"
             .x %>% 
@@ -95,21 +89,20 @@
               NA_character_,
               subspecies
             ) %>% 
-              str_remove("^(?:ssp|subsp)\\.\\s*"),
-            variety = str_remove(variety, "^var\\.\\s*"),
+              str_remove(r"{^(?:ssp|subsp)\.\s*}"),
+            variety = str_remove(variety, r"{^var\.\s*}"),
             infraspecies = case_when(
               !is.na(infraspecies) & str_detect(infraspecies, coll(original_name)) ~ NA_character_,
-              !is.na(subspecies) ~ str_c("subsp.", subspecies, sep = " "),
-              !is.na(variety) ~ str_c("var.", variety, sep = " "),
+              !is.na(subspecies) ~ paste("subsp.", subspecies),
+              !is.na(variety) ~ paste("var.", variety),
               TRUE ~ infraspecies
             ) %>% 
-              gsub2("^\\w+\\.(?!\\s)\\K", " "),
-            original_name = str_c(
+              gsub2(r"{^\w+\.(?!\s)\K}", " "),
+            original_name = paste(
               genus %>% if_else(!is.na(.) & mean(. != first_word(original_name)) > .5, ., ""),
               original_name,
               infraspecies %>% if_else(is.na(.), "", .),
-              authority %>% if_else(is.na(.), "", .),
-              sep = " "
+              authority %>% if_else(is.na(.), "", .)
             ) %>% 
               clean_str() %>% 
               uc_first()
@@ -134,14 +127,12 @@
         regions <- c("Hawaii", "Cape Verde", "Canary", "Socotra", "Azores", "Reunion", "Taiwan", "Nepal")
         
         mdf <- norm_df %>% 
-          # filter(!(id_ref %in% c(30063, 20066) & min < 1000)) %>% 
           filter(min <= max & max <= 6500 & min > -50) %>% 
           drop_na(matches("^(?:min|max)")) %>% 
           mutate(location = case_when(
             region %in% regions ~ region,
-            # id_ref %in% c(20095, 20013) ~ "Utah",
             id_ref %in% c(20062, 20082) ~ "South-Eastern Pyrenees",
-            id_ref %in% c(20001, 20051, 30046) ~ "Kenya", # 30059 aberdare
+            id_ref %in% c(20001, 20051, 30046) ~ "Kenya",
             TRUE ~ location
           )) %>% 
           arrange(desc(id_ref)) %>% 
@@ -179,16 +170,12 @@
           rename(elev_min = min, elev_max = max) %>% 
           arrange(location) %>% 
           select(id_ref:region, land_type, zone, lat:lon, gbif_sp_key:elev_max, elev_mean:elev_band, sampling_min:n_sp, singleton, data_reliability, authority_code, method)
-        
-        if (dropbox_save) {
-          write_delim(mdf, "~/Dropbox/janzen/dataset_janzen.csv", delim = ";")
-        }
       }
     
     # · Bioclim ----
       {
         bioclim <- "gis/clim/extracted/present" %>% 
-          list.files(pattern = "\\.csv$", full.names = TRUE) %>% 
+          list_files("\\.csv$") %>% 
           map_df(read_auto) %>% 
           mutate(
             across(matches("bio\\d[01]?$"), ~ .x / 10),
@@ -198,7 +185,7 @@
     
     # · Paleoclim ----
       {
-        paleoclim <- read_auto("gis/clim/extracted/palaeo/palaeo_clim_variability.csv")
+        paleoclim <- read_auto("gis/clim/extracted/palaeo/clim_lgm.csv")
       }
     
     # · Janzen ----
