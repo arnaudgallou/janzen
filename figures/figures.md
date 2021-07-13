@@ -24,8 +24,8 @@ S1. Posterior distributions for DTR, TS, ∆MAT<sub>lgm</sub> (standardized tran
 
 <br>
 
-![](../figures/mdl1-mtl2500-ez250-labs.svg)  
-S2. Names of each mountain location in figure 2.
+![](../figures/labelled_transects.svg)  
+S2. Names of each transects as shown in figure 2.
 
 <br>
 
