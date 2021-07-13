@@ -25,7 +25,7 @@ S1. Posterior distributions for DTR, TS, ∆MAT<sub>lgm</sub> (standardized tran
 <br>
 
 ![](../figures/labelled_transects.svg)  
-S2. Names of each transects as shown in figure 2.
+S2. Names of each transect as shown in figure 2.
 
 <br>
 
