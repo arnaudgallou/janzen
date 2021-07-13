@@ -1,6 +1,6 @@
 # Main figures
 
-**Note:** I edited the map to include transects < 2000 m. I haven't uploaded the other figures using these transects.
+**Note:** I edited the map to include transects < 2000 m. I haven't uploaded the other figures using these transects yet.
 
 ![](../figures/map_transects.svg)  
 Figure 1. Spatial distribution of the 46 mountain locations used in the study. The size of the dots is proportional to the number of species in each location. In red, elevational gradients between 1500 m and 2500 m; in blue, elevational gradients ≥ 2500 m.
@@ -19,7 +19,7 @@ Figure 3. Results from the analyses investigating the responses of species’ el
 
 ## Broad-scale analyses
 
-![](../figures/posterior_distribution.svg)  
+![](../figures/posterior_distributions.svg)  
 S1. Posterior distributions for DTR, TS, ∆MAT<sub>lgm</sub> (standardized transect length = 2500 m; exclusion zone = 250 m; singleton threshold ≤ 25%).
 
 <br>
