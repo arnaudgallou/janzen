@@ -7,8 +7,8 @@ Figure 1. Spatial distribution of the 46 mountain locations used in the study. T
 
 <br>
 
-![](../figures/std_top-mtl2500-ez250-big-annotated.svg)  
-Figure 2. Relationships between the mean species’ elevational range size and diurnal temperature range (A), temperature seasonality (B) and the variation of mean annual temperature in the last 21,000 years before present (C). Points represent the estimated mean elevational range sizes with their respective standard error in each of the 33 standardized transects ≥ 2500 m. Thick lines are the posterior mean calculated from 400 random draws sampled from the 95% credible interval (thin blue lines).
+![](../figures/regressions_main.svg)  
+Figure 2. Relationships between the mean species’ elevational range size and diurnal temperature range, temperature seasonality and the variation of mean annual temperature in the last 21,000 years before present. Points represent the estimated mean elevational range sizes with their respective standard error in each of the 33 standardized transects ≥ 2500 m. Thick lines are the posterior mean calculated from 400 random draws sampled from the 95% credible interval (thin blue lines).
 
 <br>
 
